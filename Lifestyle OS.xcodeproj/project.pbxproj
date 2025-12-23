@@ -6,13 +6,46 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		DB2E41112EFACCE5008C32A5 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = DB2E41102EFACCE5008C32A5 /* Supabase */; };
+		DB39AD5C2EFACBC0007C88C4 /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = DB39AD5B2EFACBC0007C88C4 /* Auth */; };
+		DB39AD5E2EFACBC0007C88C4 /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = DB39AD5D2EFACBC0007C88C4 /* Functions */; };
+		DB39AD602EFACBC0007C88C4 /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = DB39AD5F2EFACBC0007C88C4 /* PostgREST */; };
+		DB39AD622EFACBC0007C88C4 /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = DB39AD612EFACBC0007C88C4 /* Realtime */; };
+		DB39AD642EFACBC0007C88C4 /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = DB39AD632EFACBC0007C88C4 /* Storage */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		DB895D952EFAC6690068C064 /* Lifestyle OS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Lifestyle OS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		DB2E412D2EFAD486008C32A5 /* Exceptions for "Lifestyle OS" folder in "Lifestyle OS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Views/ContentView.swift,
+			);
+			target = DB895D942EFAC6690068C064 /* Lifestyle OS */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		DB2E412E2EFAD486008C32A5 /* Exceptions for "Lifestyle OS" folder in "Copy Bundle Resources" phase from "Lifestyle OS" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = DB895D932EFAC6690068C064 /* Resources */;
+			membershipExceptions = (
+				Views/ContentView.swift,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		DB895D972EFAC6690068C064 /* Lifestyle OS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				DB2E412D2EFAD486008C32A5 /* Exceptions for "Lifestyle OS" folder in "Lifestyle OS" target */,
+				DB2E412E2EFAD486008C32A5 /* Exceptions for "Lifestyle OS" folder in "Copy Bundle Resources" phase from "Lifestyle OS" target */,
+			);
 			path = "Lifestyle OS";
 			sourceTree = "<group>";
 		};
@@ -23,16 +56,30 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DB39AD602EFACBC0007C88C4 /* PostgREST in Frameworks */,
+				DB39AD5E2EFACBC0007C88C4 /* Functions in Frameworks */,
+				DB2E41112EFACCE5008C32A5 /* Supabase in Frameworks */,
+				DB39AD5C2EFACBC0007C88C4 /* Auth in Frameworks */,
+				DB39AD642EFACBC0007C88C4 /* Storage in Frameworks */,
+				DB39AD622EFACBC0007C88C4 /* Realtime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		DB2E410F2EFACCE5008C32A5 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		DB895D8C2EFAC6690068C064 = {
 			isa = PBXGroup;
 			children = (
 				DB895D972EFAC6690068C064 /* Lifestyle OS */,
+				DB2E410F2EFACCE5008C32A5 /* Frameworks */,
 				DB895D962EFAC6690068C064 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -65,6 +112,12 @@
 			);
 			name = "Lifestyle OS";
 			packageProductDependencies = (
+				DB39AD5B2EFACBC0007C88C4 /* Auth */,
+				DB39AD5D2EFACBC0007C88C4 /* Functions */,
+				DB39AD5F2EFACBC0007C88C4 /* PostgREST */,
+				DB39AD612EFACBC0007C88C4 /* Realtime */,
+				DB39AD632EFACBC0007C88C4 /* Storage */,
+				DB2E41102EFACCE5008C32A5 /* Supabase */,
 			);
 			productName = "Lifestyle OS";
 			productReference = DB895D952EFAC6690068C064 /* Lifestyle OS.app */;
@@ -94,6 +147,9 @@
 			);
 			mainGroup = DB895D8C2EFAC6690068C064;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				DB39AD5A2EFACBC0007C88C4 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DB895D962EFAC6690068C064 /* Products */;
 			projectDirPath = "";
@@ -332,6 +388,50 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		DB39AD5A2EFACBC0007C88C4 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		DB2E41102EFACCE5008C32A5 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DB39AD5A2EFACBC0007C88C4 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+		DB39AD5B2EFACBC0007C88C4 /* Auth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DB39AD5A2EFACBC0007C88C4 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Auth;
+		};
+		DB39AD5D2EFACBC0007C88C4 /* Functions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DB39AD5A2EFACBC0007C88C4 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Functions;
+		};
+		DB39AD5F2EFACBC0007C88C4 /* PostgREST */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DB39AD5A2EFACBC0007C88C4 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = PostgREST;
+		};
+		DB39AD612EFACBC0007C88C4 /* Realtime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DB39AD5A2EFACBC0007C88C4 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Realtime;
+		};
+		DB39AD632EFACBC0007C88C4 /* Storage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DB39AD5A2EFACBC0007C88C4 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Storage;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = DB895D8D2EFAC6690068C064 /* Project object */;
 }
