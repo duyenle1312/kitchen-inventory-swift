@@ -27,7 +27,7 @@ struct ContentView: View {
     var body: some View {
         Group {
             if authViewModel.isAuthenticated {
-                HomeView()
+                MainTabView().environmentObject(authViewModel)
             } else {
                 LoginView()
             }
@@ -109,4 +109,56 @@ struct ContentView_Previews: PreviewProvider {
     }
 }
 
+struct MainTabView: View {
+    @EnvironmentObject var authViewModel: AuthViewModel
+    
+    var body: some View {
+        TabView {
+            ExpenseListView().environmentObject(authViewModel)
+                .tabItem {
+                    Label("Expenses", systemImage: "dollarsign.circle.fill")
+                }
+            
+            ShoppingListsView().environmentObject(authViewModel)
+                .tabItem {
+                    Label("Shopping", systemImage: "cart.fill")
+                }
+            
+            InventoryListView().environmentObject(authViewModel)
+                .tabItem {
+                    Label("Inventory", systemImage: "square.stack.3d.up.fill")
+                }
+            
+            SettingsView()
+                .tabItem {
+                    Label("Settings", systemImage: "gear")
+                }
+        }
+    }
+}
+
+struct SettingsView: View {
+    @EnvironmentObject var authViewModel: AuthViewModel
+    
+    var body: some View {
+        NavigationView {
+            List {
+                Section("Account") {
+                    if let email = authViewModel.currentUser?.email {
+                        Text("Email: \(email)")
+                    }
+                }
+                
+                Section {
+                    Button("Sign Out", role: .destructive) {
+                        Task {
+                            await authViewModel.signOut()
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Settings")
+        }
+    }
+}
 
