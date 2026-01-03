@@ -23,8 +23,13 @@ struct AddShoppingListView: View {
     @State private var hasScheduledDate = false
     @State private var scheduledDate = Date()
     @State private var hasAvailabilityDates = false
-    @State private var availableDateStart = Date()
-    @State private var availableDateEnd = Date().addingTimeInterval(86400 * 7) // 7 days later
+    
+    @State private var availableDateStart = Calendar.current.noon(for: Date())
+    @State private var availableDateEnd = Calendar.current.date(byAdding: .day, value: 7, to: Calendar.current.noon(for: Date()))!
+
+    
+//    @State private var availableDateStart = Date()
+//    @State private var availableDateEnd = Date().addingTimeInterval(86400 * 7) // 7 days later
     
     @State private var isSubmitting = false
     @FocusState private var focusedField: Field?
@@ -199,10 +204,14 @@ struct AddShoppingListView: View {
         let loc = location.trimmingCharacters(in: .whitespacesAndNewlines)
         
         // Get dates at start of day to avoid timezone issues
+        let unitPriceDecimal = Decimal.fromString(unitPrice)
+
         let calendar = Calendar.current
-        let scheduledDateAtStartOfDay = hasScheduledDate ? calendar.startOfDay(for: scheduledDate) : nil
-        let availableStartAtStartOfDay = hasAvailabilityDates ? calendar.startOfDay(for: availableDateStart) : nil
-        let availableEndAtStartOfDay = hasAvailabilityDates ? calendar.startOfDay(for: availableDateEnd) : nil
+        
+        let scheduledDateAtStartOfDay = hasScheduledDate ? calendar.noon(for: scheduledDate) : nil
+        let availableStartAtStartOfDay = hasAvailabilityDates ? calendar.noon(for: availableDateStart) : nil
+        let availableEndAtStartOfDay = hasAvailabilityDates ? calendar.noon(for: availableDateEnd) : nil
+
         
         Task {
             await viewModel.addShoppingList(
@@ -212,7 +221,7 @@ struct AddShoppingListView: View {
                 location: loc.isEmpty ? nil : loc,
                 availableDateStart: availableStartAtStartOfDay,
                 availableDateEnd: availableEndAtStartOfDay,
-                unitPrice: Decimal(string: unitPrice),
+                unitPrice: unitPriceDecimal,
                 quantity: Int(quantity),
                 purchased: false,
                 scheduledDate: scheduledDateAtStartOfDay,

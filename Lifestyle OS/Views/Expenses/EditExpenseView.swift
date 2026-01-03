@@ -10,9 +10,10 @@ internal import Auth
 
 
 struct EditExpenseView: View {
-    @Environment(\.dismiss) var dismiss
-    @ObservedObject var viewModel: ExpenseViewModel
+    @Environment(\.dismiss) private var dismiss
     let expense: Expense
+    @ObservedObject var viewModel: ExpenseViewModel
+    
 
     @State private var amount = ""
     @State private var currency = "EUR"
@@ -29,7 +30,7 @@ struct EditExpenseView: View {
 
     let currencies = ["EUR", "USD", "GBP", "JPY", "BGN", "CNY", "INR"]
     let categories = ["Food & Drink", "Home", "Rent & Utilities", "Gold/Silver", "ETFs", "Transport", "Telecom", "Crochet", "Fun", "Eating Out", "Work", "Other"]
-    let paymentMethods = ["Food Voucher", "Trading 212", "Revolut", "UBB", "Curve", "VCB", "Cash", "Other"]
+    let paymentMethods = ["Food Voucher", "T212", "Revolut", "UBB", "Curve", "VCB", "Cash", "Other"]
 
     // MARK: - Calculated Amount
 
@@ -178,6 +179,7 @@ struct EditExpenseView: View {
         }
 
         let amountDecimal = unitPriceDecimal * Decimal(unitInt)
+        
         let calendar = Calendar.current
 
         let expenseDateSafe = calendar.noon(for: expenseDate)
@@ -198,6 +200,7 @@ struct EditExpenseView: View {
                 paymentMethod: paymentMethod.isEmpty ? nil : paymentMethod,
                 item: item.isEmpty ? nil : item
             )
+            
             dismiss()
         }
     }

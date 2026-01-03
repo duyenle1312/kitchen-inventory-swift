@@ -67,7 +67,8 @@ struct AddInventoryItemView: View {
         }
         
         let accountId = user.id
-        print("User ID: \(user.id)")
+
+        let expirationDateToSave = Calendar.current.noon(for: expirationDate)
 
         
         Task {
@@ -75,7 +76,7 @@ struct AddInventoryItemView: View {
                 accountId: accountId,
                 name: name,
                 quantity: Decimal(string: quantity)!,
-                expirationDate: expirationDate,
+                expirationDate: expirationDateToSave,
                 unit: unit.isEmpty ? nil : unit,
                 description: description.isEmpty ? nil : description
             )

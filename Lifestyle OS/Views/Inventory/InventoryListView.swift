@@ -39,7 +39,6 @@ struct InventoryListView: View {
     }
     
     var filteredAndSortedItems: [InventoryItem] {
-        // First apply the selected filter
         var filtered = viewModel.items
         
         switch selectedFilter {
@@ -58,23 +57,18 @@ struct InventoryListView: View {
             }
         }
         
-        // Then apply search text filter
         if !searchText.isEmpty {
             filtered = filtered.filter { item in
                 item.name.localizedCaseInsensitiveContains(searchText)
             }
         }
         
-        // Sort items based on selected option
         return filtered.sorted { item1, item2 in
             let comparisonResult: ComparisonResult
-            
             switch sortOption {
             case .name:
                 comparisonResult = item1.name.localizedCompare(item2.name)
-                
             case .expirationDate:
-                // Handle nil expiration dates (put them at the end)
                 if item1.expirationDate == nil && item2.expirationDate == nil {
                     comparisonResult = .orderedSame
                 } else if item1.expirationDate == nil {
@@ -84,7 +78,6 @@ struct InventoryListView: View {
                 } else {
                     comparisonResult = item1.expirationDate!.compare(item2.expirationDate!)
                 }
-                
             case .quantity:
                 if item1.quantity < item2.quantity {
                     comparisonResult = .orderedAscending
@@ -94,17 +87,10 @@ struct InventoryListView: View {
                     comparisonResult = .orderedSame
                 }
             }
-            
-            // Apply ascending/descending order
-            if sortAscending {
-                return comparisonResult == .orderedAscending
-            } else {
-                return comparisonResult == .orderedDescending
-            }
+            return sortAscending ? (comparisonResult == .orderedAscending) : (comparisonResult == .orderedDescending)
         }
     }
     
-    // Group items by expiration status
     var groupedItems: [(String, [InventoryItem])] {
         let expired = filteredAndSortedItems.filter { item in
             guard let expirationDate = item.expirationDate else { return false }
@@ -124,17 +110,9 @@ struct InventoryListView: View {
         }
         
         var groups: [(String, [InventoryItem])] = []
-        
-        if !expired.isEmpty {
-            groups.append(("⚠️ Expired", expired))
-        }
-        if !expiringSoon.isEmpty {
-            groups.append(("⏰ Expiring Soon", expiringSoon))
-        }
-        if !fresh.isEmpty {
-            groups.append(("✓ Fresh", fresh))
-        }
-        
+        if !expired.isEmpty { groups.append(("⚠️ Expired", expired)) }
+        if !expiringSoon.isEmpty { groups.append(("⏰ Expiring Soon", expiringSoon)) }
+        if !fresh.isEmpty { groups.append(("✓ Fresh", fresh)) }
         return groups
     }
     
@@ -151,29 +129,39 @@ struct InventoryListView: View {
                     emptyStateView
                 } else {
                     VStack(spacing: 0) {
-                        // Stats header
                         statsHeaderView
                             .padding()
                             .background(Color(.systemGroupedBackground))
                         
-                        // List
                         List {
                             if sortOption == .expirationDate {
-                                // Show grouped view when sorting by expiration
                                 ForEach(groupedItems, id: \.0) { groupName, items in
                                     Section(header: Text(groupName).font(.headline)) {
                                         ForEach(items) { item in
                                             NavigationLink(destination: InventoryDetailView(item: item, viewModel: viewModel)) {
                                                 InventoryRowView(item: item)
                                             }
+                                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                                Button(role: .destructive) {
+                                                    deleteItem(item)
+                                                } label: {
+                                                    Label("Delete", systemImage: "trash")
+                                                }
+                                            }
                                         }
                                     }
                                 }
                             } else {
-                                // Show flat list for other sorts
                                 ForEach(filteredAndSortedItems) { item in
                                     NavigationLink(destination: InventoryDetailView(item: item, viewModel: viewModel)) {
                                         InventoryRowView(item: item)
+                                    }
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                        Button(role: .destructive) {
+                                            deleteItem(item)
+                                        } label: {
+                                            Label("Delete", systemImage: "trash")
+                                        }
                                     }
                                 }
                             }
@@ -198,18 +186,13 @@ struct InventoryListView: View {
                         Divider()
                         
                         Button(action: { sortAscending.toggle() }) {
-                            Label(
-                                sortAscending ? "Ascending" : "Descending",
-                                systemImage: sortAscending ? "arrow.up" : "arrow.down"
-                            )
+                            Label(sortAscending ? "Ascending" : "Descending",
+                                  systemImage: sortAscending ? "arrow.up" : "arrow.down")
                         }
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "line.3.horizontal.decrease.circle\(sortOption != .name ? ".fill" : "")")
-                            if sortOption != .name {
-                                Text(sortOption.rawValue)
-                                    .font(.caption)
-                            }
+                            if sortOption != .name { Text(sortOption.rawValue).font(.caption) }
                         }
                     }
                 }
@@ -224,10 +207,7 @@ struct InventoryListView: View {
                 AddInventoryItemView(viewModel: viewModel).environmentObject(authViewModel)
             }
             .task {
-                guard let user = authViewModel.currentUser else {
-                    print("No current user")
-                    return
-                }
+                guard let user = authViewModel.currentUser else { return }
                 await viewModel.loadInventory(accountId: user.id)
             }
             .refreshable {
@@ -238,37 +218,23 @@ struct InventoryListView: View {
         }
     }
     
+    private func deleteItem(_ item: InventoryItem) {
+        Task {
+            await viewModel.deleteItem(id: item.id)
+        }
+    }
+    
     private var statsHeaderView: some View {
         HStack(spacing: 12) {
-            InventoryStatCard(
-                title: "Total",
-                value: "\(viewModel.items.count)",
-                icon: "cube.box.fill",
-                color: .blue,
-                isSelected: selectedFilter == .all
-            ) {
+            InventoryStatCard(title: "Total", value: "\(viewModel.items.count)", icon: "cube.box.fill", color: .blue, isSelected: selectedFilter == .all) {
                 selectedFilter = .all
                 searchText = ""
             }
-            
-            InventoryStatCard(
-                title: "Expiring",
-                value: "\(expiringSoonCount)",
-                icon: "clock.fill",
-                color: .orange,
-                isSelected: selectedFilter == .expiringSoon
-            ) {
+            InventoryStatCard(title: "Expiring", value: "\(expiringSoonCount)", icon: "clock.fill", color: .orange, isSelected: selectedFilter == .expiringSoon) {
                 selectedFilter = .expiringSoon
                 searchText = ""
             }
-            
-            InventoryStatCard(
-                title: "Expired",
-                value: "\(expiredCount)",
-                icon: "exclamationmark.triangle.fill",
-                color: .red,
-                isSelected: selectedFilter == .expired
-            ) {
+            InventoryStatCard(title: "Expired", value: "\(expiredCount)", icon: "exclamationmark.triangle.fill", color: .red, isSelected: selectedFilter == .expired) {
                 selectedFilter = .expired
                 searchText = ""
             }
@@ -334,7 +300,6 @@ struct InventoryStatCard: View {
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
                 }
-                
                 Text(title)
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -360,7 +325,6 @@ struct InventoryRowView: View {
     
     var body: some View {
         HStack(spacing: 12) {
-            // Icon based on expiration status
             ZStack {
                 Circle()
                     .fill(statusColor.opacity(0.2))
@@ -370,13 +334,11 @@ struct InventoryRowView: View {
                     .font(.system(size: 18))
             }
             
-            // Item details
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.name)
                     .font(.system(size: 16, weight: .semibold))
                     .lineLimit(1)
                 
-                // Expiration info
                 if let expirationDate = item.expirationDate {
                     HStack(spacing: 4) {
                         Image(systemName: "calendar")
@@ -395,12 +357,9 @@ struct InventoryRowView: View {
                     .foregroundColor(.secondary)
                 }
                 
-                // Quantity and unit
                 HStack(spacing: 4) {
                     Text("Qty: \(formatQuantity(item.quantity))")
-                    if let unit = item.unit {
-                        Text(unit)
-                    }
+                    if let unit = item.unit { Text(unit) }
                 }
                 .font(.system(size: 13))
                 .foregroundColor(.secondary)
@@ -410,60 +369,33 @@ struct InventoryRowView: View {
     }
     
     private var statusIcon: String {
-        guard let expirationDate = item.expirationDate else {
-            return "cube.box"
-        }
-        
-        if expirationDate < Date() {
-            return "exclamationmark.triangle.fill"
-        } else if daysUntilExpiration(expirationDate) <= 21 {
-            return "clock.fill"
-        } else {
-            return "checkmark.circle.fill"
-        }
+        guard let expirationDate = item.expirationDate else { return "cube.box" }
+        if expirationDate < Date() { return "exclamationmark.triangle.fill" }
+        else if daysUntilExpiration(expirationDate) <= 21 { return "clock.fill" }
+        else { return "checkmark.circle.fill" }
     }
     
     private var statusColor: Color {
-        guard let expirationDate = item.expirationDate else {
-            return .blue
-        }
-        
-        if expirationDate < Date() {
-            return .red
-        } else if daysUntilExpiration(expirationDate) <= 21 {
-            return .orange
-        } else {
-            return .green
-        }
+        guard let expirationDate = item.expirationDate else { return .blue }
+        if expirationDate < Date() { return .red }
+        else if daysUntilExpiration(expirationDate) <= 21 { return .orange }
+        else { return .green }
     }
     
     private func expirationColor(_ date: Date) -> Color {
-        if date < Date() {
-            return .red
-        } else if daysUntilExpiration(date) <= 21 {
-            return .orange
-        } else {
-            return .blue
-        }
+        if date < Date() { return .red }
+        else if daysUntilExpiration(date) <= 21 { return .orange }
+        else { return .blue }
     }
     
     private func formatExpirationText(_ date: Date) -> String {
         let days = daysUntilExpiration(date)
-        
-        if date < Date() {
-            let daysExpired = abs(days)
-            return "Expired \(daysExpired) day\(daysExpired == 1 ? "" : "s") ago"
-        } else if days == 0 {
-            return "Expires today"
-        } else if days == 1 {
-            return "Expires tomorrow"
-        } else if days <= 7 {
-            return "Expires within 1 week in \(days) days"
-        } else if days <= 21 {
-            return "Expires in \(days) days"
-        } else {
-            return "\(formatDate(date))"
-        }
+        if date < Date() { let daysExpired = abs(days); return "Expired \(daysExpired) day\(daysExpired == 1 ? "" : "s") ago" }
+        else if days == 0 { return "Expires today" }
+        else if days == 1 { return "Expires tomorrow" }
+        else if days <= 7 { return "Expires within 1 week in \(days) days" }
+        else if days <= 21 { return "Expires in \(days) days" }
+        else { return formatDate(date) }
     }
     
     private func daysUntilExpiration(_ date: Date) -> Int {

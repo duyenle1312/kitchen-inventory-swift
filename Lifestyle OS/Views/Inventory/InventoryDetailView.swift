@@ -109,10 +109,7 @@ struct InventoryDetailView: View {
     
     private func saveChanges() {
         Task {
-//            let calendar = Calendar.current
             let expirationDateToSave = hasExpirationDate ? Calendar.current.noon(for: editExpirationDate) : nil
-
-//            let expirationDateToSave = hasExpirationDate ? calendar.startOfDay(for: editExpirationDate) : nil
             
             await viewModel.updateItem(
                 id: item.id,

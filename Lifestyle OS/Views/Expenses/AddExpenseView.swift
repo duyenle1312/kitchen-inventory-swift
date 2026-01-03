@@ -28,7 +28,7 @@ struct AddExpenseView: View {
     
     let currencies = ["EUR", "USD", "GBP", "JPY", "BGN", "CNY", "INR"]
     let categories = ["Food & Drink", "Home", "Rent & Utilities", "Gold/Silver", "ETFs", "Transport", "Telecom", "Crochet", "Fun", "Eating Out", "Work", "Other"]
-    let paymentMethods = ["Food Voucher", "Trading 212", "Revolut", "UBB", "Curve", "VCB", "Cash", "Other"]
+    let paymentMethods = ["Food Voucher", "T212", "Revolut", "UBB", "Curve", "VCB", "Cash", "Other"]
     
     // Computed property for calculated amount
     private var calculatedAmount: String {
@@ -146,20 +146,27 @@ struct AddExpenseView: View {
         let accountId = user.id
         print("User ID: \(user.id)")
         
+        
         // Parse numeric values
         guard let unitInt = Int(unit),
-              let unitPriceDecimal = Decimal(string: unitPrice) else {
+              let unitPriceDecimal = Decimal.fromString(unitPrice) else {
             print("Invalid unit or unit price")
             return
         }
-        
+
         // Calculate total amount
         let amountDecimal = unitPriceDecimal * Decimal(unitInt)
         
         // Create dates at start of day to avoid timezone issues
-        let calendar = Calendar.current
-        let expenseDateAtStartOfDay = calendar.startOfDay(for: expenseDate)
-        let expireDateAtStartOfDay = hasExpireDate ? calendar.startOfDay(for: expireDate) : nil
+        
+        let expenseDateAtStartOfDay = hasExpireDate ? Calendar.current.noon(for: expenseDate) : Date()
+        
+        let expireDateAtStartOfDay = hasExpireDate ? Calendar.current.noon(for: expireDate) : nil
+
+//        
+//        let calendar = Calendar.current
+//        let expenseDateAtStartOfDay = calendar.startOfDay(for: expenseDate)
+//        let expireDateAtStartOfDay = hasExpireDate ? calendar.startOfDay(for: expireDate) : nil
         
         Task {
             await viewModel.addExpense(
