@@ -39,17 +39,9 @@ struct InventoryListView: View {
     }
     
     var filteredAndSortedItems: [InventoryItem] {
-        // Filter items
-        var filtered = if searchText.isEmpty {
-            viewModel.items
-        } else {
-            viewModel.items.filter {
-                $0.name.localizedCaseInsensitiveContains(searchText) ||
-                ($0.description?.localizedCaseInsensitiveContains(searchText) ?? false)
-            }
-        }
+        // First apply the selected filter
+        var filtered = viewModel.items
         
-        // Apply selected filter
         switch selectedFilter {
         case .all:
             break
@@ -63,6 +55,13 @@ struct InventoryListView: View {
             filtered = filtered.filter { item in
                 guard let expirationDate = item.expirationDate else { return false }
                 return expirationDate < Date()
+            }
+        }
+        
+        // Then apply search text filter
+        if !searchText.isEmpty {
+            filtered = filtered.filter { item in
+                item.name.localizedCaseInsensitiveContains(searchText)
             }
         }
         
@@ -249,6 +248,7 @@ struct InventoryListView: View {
                 isSelected: selectedFilter == .all
             ) {
                 selectedFilter = .all
+                searchText = ""
             }
             
             InventoryStatCard(
@@ -259,6 +259,7 @@ struct InventoryListView: View {
                 isSelected: selectedFilter == .expiringSoon
             ) {
                 selectedFilter = .expiringSoon
+                searchText = ""
             }
             
             InventoryStatCard(
@@ -269,6 +270,7 @@ struct InventoryListView: View {
                 isSelected: selectedFilter == .expired
             ) {
                 selectedFilter = .expired
+                searchText = ""
             }
         }
     }
@@ -374,16 +376,6 @@ struct InventoryRowView: View {
                     .font(.system(size: 16, weight: .semibold))
                     .lineLimit(1)
                 
-                // Quantity and unit
-                HStack(spacing: 4) {
-                    Text("Qty: \(formatQuantity(item.quantity))")
-                    if let unit = item.unit {
-                        Text(unit)
-                    }
-                }
-                .font(.system(size: 13))
-                .foregroundColor(.secondary)
-                
                 // Expiration info
                 if let expirationDate = item.expirationDate {
                     HStack(spacing: 4) {
@@ -402,6 +394,16 @@ struct InventoryRowView: View {
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)
                 }
+                
+                // Quantity and unit
+                HStack(spacing: 4) {
+                    Text("Qty: \(formatQuantity(item.quantity))")
+                    if let unit = item.unit {
+                        Text(unit)
+                    }
+                }
+                .font(.system(size: 13))
+                .foregroundColor(.secondary)
             }
         }
         .padding(.vertical, 4)

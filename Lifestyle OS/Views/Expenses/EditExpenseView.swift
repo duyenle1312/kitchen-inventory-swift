@@ -8,11 +8,12 @@
 import SwiftUI
 internal import Auth
 
+
 struct EditExpenseView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var viewModel: ExpenseViewModel
     let expense: Expense
-    
+
     @State private var amount = ""
     @State private var currency = "EUR"
     @State private var expenseDate = Date()
@@ -25,38 +26,49 @@ struct EditExpenseView: View {
     @State private var expireDate = Date()
     @State private var paymentMethod = ""
     @State private var hasExpireDate = false
-    
+
     let currencies = ["EUR", "USD", "GBP", "JPY", "BGN", "CNY", "INR"]
     let categories = ["Food & Drink", "Home", "Rent & Utilities", "Gold/Silver", "ETFs", "Transport", "Telecom", "Crochet", "Fun", "Eating Out", "Work", "Other"]
     let paymentMethods = ["Food Voucher", "Trading 212", "Revolut", "UBB", "Curve", "VCB", "Cash", "Other"]
-    
-    // Computed property for calculated amount
+
+    // MARK: - Calculated Amount
+
     private var calculatedAmount: String {
-        guard let unitInt = Int(unit), unitInt > 0,
-              let unitPriceDecimal = Decimal(string: unitPrice), unitPriceDecimal > 0 else {
+        guard let unitInt = Int(unit),
+              let unitPriceDecimal = Decimal.fromString(unitPrice),
+              unitInt > 0 else {
             return "0.00"
         }
+
         let total = unitPriceDecimal * Decimal(unitInt)
-        return String(format: "%.2f", NSDecimalNumber(decimal: total).doubleValue)
+
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
+
+        return formatter.string(from: total as NSDecimalNumber) ?? "0.00"
     }
-    
+
     var body: some View {
         NavigationView {
             Form {
                 Section("Item Details") {
                     TextField("Item Name", text: $item)
-                    
+
                     HStack {
                         TextField("Quantity", text: $unit)
                             .keyboardType(.numberPad)
+
                         Text("×")
                             .foregroundColor(.secondary)
+
                         TextField("Unit Price", text: $unitPrice)
                             .keyboardType(.decimalPad)
                     }
-                    
+
                     Toggle("Has Expiration Date", isOn: $hasExpireDate)
-                    
+
                     if hasExpireDate {
                         DatePicker(
                             "Expiration Date",
@@ -65,10 +77,8 @@ struct EditExpenseView: View {
                         )
                     }
                 }
-                
-                
+
                 Section("Basic Information") {
-                    // Amount (calculated automatically)
                     HStack {
                         Text("Total Amount")
                         Spacer()
@@ -76,41 +86,38 @@ struct EditExpenseView: View {
                             .foregroundColor(.secondary)
                             .font(.system(size: 16, weight: .semibold))
                     }
-                    
-                    // Currency
+
                     Picker("Currency", selection: $currency) {
-                        ForEach(currencies, id: \.self) { curr in
-                            Text(curr).tag(curr)
+                        ForEach(currencies, id: \.self) {
+                            Text($0)
                         }
                     }
-                    
-                    // Expense Date
+
                     DatePicker(
                         "Date",
                         selection: $expenseDate,
                         displayedComponents: .date
                     )
-                    
-                    // Category
+
                     Picker("Category", selection: $category) {
                         Text("Select Category").tag("")
-                        ForEach(categories, id: \.self) { cat in
-                            Text(cat).tag(cat)
+                        ForEach(categories, id: \.self) {
+                            Text($0).tag($0)
                         }
                     }
                 }
-                
+
                 Section("Additional Information") {
                     TextField("Location", text: $location)
-                    
+
                     Picker("Payment Method", selection: $paymentMethod) {
                         Text("Select Method").tag("")
-                        ForEach(paymentMethods, id: \.self) { method in
-                            Text(method).tag(method)
+                        ForEach(paymentMethods, id: \.self) {
+                            Text($0).tag($0)
                         }
                     }
                 }
-                
+
                 Section("Description") {
                     TextEditor(text: $description)
                         .frame(minHeight: 100)
@@ -124,7 +131,7 @@ struct EditExpenseView: View {
                         dismiss()
                     }
                 }
-                
+
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
                         updateExpense()
@@ -138,7 +145,9 @@ struct EditExpenseView: View {
             }
         }
     }
-    
+
+    // MARK: - Load
+
     private func loadExpenseData() {
         currency = expense.currency
         expenseDate = expense.expense_date
@@ -149,7 +158,7 @@ struct EditExpenseView: View {
         unit = expense.unit.map { String($0) } ?? ""
         unitPrice = expense.unit_price.map { String(format: "%.2f", $0) } ?? ""
         paymentMethod = expense.payment_method ?? ""
-        
+
         if let expDate = expense.expire_date {
             hasExpireDate = true
             expireDate = expDate
@@ -158,35 +167,34 @@ struct EditExpenseView: View {
             expireDate = Date()
         }
     }
-    
+
+    // MARK: - Save
+
     private func updateExpense() {
-        // Parse numeric values
         guard let unitInt = Int(unit),
-              let unitPriceDecimal = Decimal(string: unitPrice) else {
+              let unitPriceDecimal = Decimal.fromString(unitPrice) else {
             print("Invalid unit or unit price")
             return
         }
-        
-        // Calculate total amount
+
         let amountDecimal = unitPriceDecimal * Decimal(unitInt)
-        
-        // Create dates at start of day to avoid timezone issues
         let calendar = Calendar.current
-        let expenseDateAtStartOfDay = calendar.startOfDay(for: expenseDate)
-        let expireDateAtStartOfDay = hasExpireDate ? calendar.startOfDay(for: expireDate) : nil
-        
+
+        let expenseDateSafe = calendar.noon(for: expenseDate)
+        let expireDateSafe = hasExpireDate ? calendar.noon(for: expireDate) : nil
+
         Task {
             await viewModel.updateExpense(
                 id: expense.id,
                 amount: amountDecimal,
                 currency: currency,
-                expenseDate: expenseDateAtStartOfDay,
+                expenseDate: expenseDateSafe,
                 category: category.isEmpty ? nil : category,
                 description: description.isEmpty ? nil : description,
                 location: location.isEmpty ? nil : location,
                 unit: unitInt,
                 unitPrice: unitPriceDecimal,
-                expireDate: expireDateAtStartOfDay,
+                expireDate: expireDateSafe,
                 paymentMethod: paymentMethod.isEmpty ? nil : paymentMethod,
                 item: item.isEmpty ? nil : item
             )

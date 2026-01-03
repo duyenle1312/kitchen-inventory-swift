@@ -30,16 +30,16 @@ struct InventoryDetailView: View {
                         TextField("Unit", text: $editUnit)
                     }
                     
-                    // Toggle for expiration date
                     Toggle("Has Expiration Date", isOn: $hasExpirationDate)
                     
-                    // Show date picker only if has expiration date
                     if hasExpirationDate {
                         DatePicker(
                             "Expiration Date",
                             selection: $editExpirationDate,
                             displayedComponents: .date
                         )
+                        .datePickerStyle(.graphical)
+                        .environment(\.timeZone, TimeZone.current)
                     }
                 } else {
                     LabeledContent("Name", value: item.name)
@@ -52,8 +52,7 @@ struct InventoryDetailView: View {
                             Text("\(formatFullDate(expirationDate))")
                                 .foregroundColor(expirationDate < Date() ? .red : .secondary)
                                 .lineLimit(1)
-                        }
-                        else {
+                        } else {
                             Text("No expiration")
                                 .foregroundColor(.secondary)
                         }
@@ -97,7 +96,6 @@ struct InventoryDetailView: View {
         editUnit = item.unit ?? ""
         editDescription = item.description ?? ""
         
-        // Set expiration date state
         if let expirationDate = item.expirationDate {
             hasExpirationDate = true
             editExpirationDate = expirationDate
@@ -111,14 +109,20 @@ struct InventoryDetailView: View {
     
     private func saveChanges() {
         Task {
+//            let calendar = Calendar.current
+            let expirationDateToSave = hasExpirationDate ? Calendar.current.noon(for: editExpirationDate) : nil
+
+//            let expirationDateToSave = hasExpirationDate ? calendar.startOfDay(for: editExpirationDate) : nil
+            
             await viewModel.updateItem(
                 id: item.id,
                 name: editName,
-                quantity: Decimal(string: editQuantity)!,
+                quantity: Decimal(string: editQuantity) ?? 0,
                 unit: editUnit.isEmpty ? nil : editUnit,
                 description: editDescription.isEmpty ? nil : editDescription,
-                expirationDate: hasExpirationDate ? editExpirationDate : nil
+                expirationDate: expirationDateToSave
             )
+            
             isEditing = false
         }
     }
@@ -126,6 +130,7 @@ struct InventoryDetailView: View {
     private func formatFullDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd/MM/yyyy"
+        formatter.timeZone = TimeZone.current
         return formatter.string(from: date)
     }
     

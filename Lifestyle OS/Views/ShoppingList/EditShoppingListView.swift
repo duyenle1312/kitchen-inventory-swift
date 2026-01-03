@@ -8,12 +8,13 @@
 import SwiftUI
 internal import Auth
 
+
 struct EditShoppingListView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var authViewModel: AuthViewModel
     let item: ShoppingList
     @ObservedObject var viewModel: ShoppingListViewModel
-    
+
     // Form fields
     @State private var itemName = ""
     @State private var description = ""
@@ -27,36 +28,45 @@ struct EditShoppingListView: View {
     @State private var hasAvailabilityDates = false
     @State private var availableDateStart = Date()
     @State private var availableDateEnd = Date().addingTimeInterval(86400 * 7)
-    
+
     @State private var isSubmitting = false
     @State private var showingDeleteAlert = false
     @FocusState private var focusedField: Field?
-    
+
     enum Field {
         case item, description, location, quantity, unitPrice
     }
-    
+
     var isFormValid: Bool {
         !itemName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
-    
-    // Computed property for calculated total
+
+    // MARK: - Calculated Total
+
     private var calculatedTotal: String {
-        guard let qtyInt = Int(quantity), qtyInt > 0,
-              let priceDecimal = Decimal(string: unitPrice), priceDecimal > 0 else {
+        guard let qtyInt = Int(quantity),
+              let priceDecimal = Decimal.fromString(unitPrice),
+              qtyInt > 0 else {
             return "0.00"
         }
+
         let total = priceDecimal * Decimal(qtyInt)
-        return String(format: "%.2f", NSDecimalNumber(decimal: total).doubleValue)
+
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
+
+        return formatter.string(from: total as NSDecimalNumber) ?? "0.00"
     }
-    
+
     var body: some View {
         NavigationView {
             Form {
                 // Purchase Status
                 Section {
                     Toggle("Purchased", isOn: $purchased)
-                    
+
                     if purchased {
                         HStack {
                             Image(systemName: "checkmark.circle.fill")
@@ -66,20 +76,20 @@ struct EditShoppingListView: View {
                         }
                     }
                 }
-                
+
                 // Basic Information
                 Section("Item Details") {
                     TextField("Item name", text: $itemName)
                         .focused($focusedField, equals: .item)
-                    
+
                     TextField("Description (optional)", text: $description, axis: .vertical)
                         .focused($focusedField, equals: .description)
                         .lineLimit(2...4)
-                    
+
                     TextField("Location/Store (optional)", text: $location)
                         .focused($focusedField, equals: .location)
                 }
-                
+
                 // Quantity and Price
                 Section("Quantity & Price") {
                     HStack {
@@ -91,7 +101,7 @@ struct EditShoppingListView: View {
                             .multilineTextAlignment(.trailing)
                             .frame(width: 100)
                     }
-                    
+
                     HStack {
                         Text("Unit Price")
                         Spacer()
@@ -101,10 +111,10 @@ struct EditShoppingListView: View {
                             .multilineTextAlignment(.trailing)
                             .frame(width: 100)
                     }
-                    
-                    if !quantity.isEmpty && !unitPrice.isEmpty,
-                       Int(quantity) ?? 0 > 0,
-                       (Decimal(string: unitPrice) ?? 0) > 0 {
+
+                    if let qty = Int(quantity),
+                       let price = Decimal.fromString(unitPrice),
+                       qty > 0, price > 0 {
                         HStack {
                             Text("Total")
                                 .font(.system(size: 16, weight: .semibold))
@@ -115,7 +125,7 @@ struct EditShoppingListView: View {
                         }
                     }
                 }
-                
+
                 // Priority
                 Section("Priority") {
                     Picker("Priority Level", selection: $priority) {
@@ -128,11 +138,11 @@ struct EditShoppingListView: View {
                     }
                     .pickerStyle(.menu)
                 }
-                
+
                 // Scheduled Date
                 Section {
                     Toggle("Set scheduled date", isOn: $hasScheduledDate)
-                    
+
                     if hasScheduledDate {
                         DatePicker(
                             "Scheduled for",
@@ -145,18 +155,18 @@ struct EditShoppingListView: View {
                 } footer: {
                     Text("Set a date when you plan to purchase this item")
                 }
-                
+
                 // Availability Dates
                 Section {
                     Toggle("Set availability period", isOn: $hasAvailabilityDates)
-                    
+
                     if hasAvailabilityDates {
                         DatePicker(
                             "Available from",
                             selection: $availableDateStart,
                             displayedComponents: .date
                         )
-                        
+
                         DatePicker(
                             "Available until",
                             selection: $availableDateEnd,
@@ -169,13 +179,13 @@ struct EditShoppingListView: View {
                 } footer: {
                     Text("Useful for seasonal items or limited-time offers")
                 }
-                
+
                 // Metadata
                 Section("Information") {
                     LabeledContent("Created", value: item.created_at, format: .dateTime)
                     LabeledContent("Last Updated", value: item.updated_at, format: .dateTime)
                 }
-                
+
                 // Delete Button
                 Section {
                     Button(role: .destructive) {
@@ -197,7 +207,7 @@ struct EditShoppingListView: View {
                         dismiss()
                     }
                 }
-                
+
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
                         saveChanges()
@@ -205,7 +215,7 @@ struct EditShoppingListView: View {
                     .disabled(!isFormValid || isSubmitting)
                     .foregroundColor(!isFormValid || isSubmitting ? .gray : .blue)
                 }
-                
+
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
                     Button("Done") {
@@ -226,16 +236,20 @@ struct EditShoppingListView: View {
             }
         }
     }
-    
+
+    // MARK: - Load
+
     private func loadItemData() {
         itemName = item.item
         description = item.description ?? ""
         location = item.location ?? ""
         quantity = item.quantity.map { String($0) } ?? ""
-        unitPrice = item.unitPriceDecimal.map { String(format: "%.2f", NSDecimalNumber(decimal: $0).doubleValue) } ?? ""
+        unitPrice = item.unitPriceDecimal.map {
+            NumberFormatter.localizedString(from: $0 as NSDecimalNumber, number: .decimal)
+        } ?? ""
         priority = item.priority ?? 0
         purchased = item.purchased
-        
+
         if let scheduled = item.scheduled_date {
             hasScheduledDate = true
             scheduledDate = scheduled
@@ -243,8 +257,9 @@ struct EditShoppingListView: View {
             hasScheduledDate = false
             scheduledDate = Date()
         }
-        
-        if let start = item.available_date_start, let end = item.available_date_end {
+
+        if let start = item.available_date_start,
+           let end = item.available_date_end {
             hasAvailabilityDates = true
             availableDateStart = start
             availableDateEnd = end
@@ -254,47 +269,47 @@ struct EditShoppingListView: View {
             availableDateEnd = Date().addingTimeInterval(86400 * 7)
         }
     }
-    
+
+    // MARK: - Save
+
     private func saveChanges() {
         guard isFormValid else { return }
-        
+
         isSubmitting = true
         focusedField = nil
-        
+
         let trimmedItem = itemName.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedDesc = description.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedLoc = location.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        // Parse numeric values
+
         let quantityInt = Int(quantity)
-        let unitPriceDecimal = Decimal(string: unitPrice)
-        
-        // Create dates at start of day to avoid timezone issues
+        let unitPriceDecimal = Decimal.fromString(unitPrice)
+
         let calendar = Calendar.current
-        let scheduledDateAtStartOfDay = hasScheduledDate ? calendar.startOfDay(for: scheduledDate) : nil
-        let availableDateStartAtStartOfDay = hasAvailabilityDates ? calendar.startOfDay(for: availableDateStart) : nil
-        let availableDateEndAtStartOfDay = hasAvailabilityDates ? calendar.startOfDay(for: availableDateEnd) : nil
-        
+        let scheduledDateSafe = hasScheduledDate ? calendar.noon(for: scheduledDate) : nil
+        let availableDateStartSafe = hasAvailabilityDates ? calendar.noon(for: availableDateStart) : nil
+        let availableDateEndSafe = hasAvailabilityDates ? calendar.noon(for: availableDateEnd) : nil
+
         Task {
             await viewModel.updateShoppingList(
                 id: item.id,
                 item: trimmedItem,
                 description: trimmedDesc.isEmpty ? nil : trimmedDesc,
                 location: trimmedLoc.isEmpty ? nil : trimmedLoc,
-                availableDateStart: availableDateStartAtStartOfDay,
-                availableDateEnd: availableDateEndAtStartOfDay,
+                availableDateStart: availableDateStartSafe,
+                availableDateEnd: availableDateEndSafe,
                 unitPrice: unitPriceDecimal,
                 quantity: quantityInt,
                 purchased: purchased,
-                scheduledDate: scheduledDateAtStartOfDay,
+                scheduledDate: scheduledDateSafe,
                 priority: priority > 0 ? priority : nil
             )
-            
+
             isSubmitting = false
             dismiss()
         }
     }
-    
+
     private func deleteItem() {
         Task {
             await viewModel.deleteShoppingList(id: item.id)
@@ -302,3 +317,4 @@ struct EditShoppingListView: View {
         }
     }
 }
+
