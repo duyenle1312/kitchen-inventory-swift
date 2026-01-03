@@ -239,8 +239,8 @@ struct ExpenseRow: View {
                 
                 HStack(spacing: 4) {
                     if let location = expense.location {
-                        Image(systemName: "mappin.circle.fill")
-                            .font(.system(size: 12))
+//                        Image(systemName: "mappin.circle.fill")
+//                            .font(.system(size: 12))
                         Text(location)
                             .font(.system(size: 13))
                     }
@@ -376,9 +376,6 @@ struct ExpenseDetailView: View {
                     }
                 }
             }
-//            .sheet(item: $selectedItem) { item in
-//                EditShoppingListView(item: item, viewModel: viewModel)
-//            }
             .sheet(isPresented: $showingEditExpense) {
                 EditExpenseView(expense: expense, viewModel: viewModel)
             }
